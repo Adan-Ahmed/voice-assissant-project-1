@@ -2,68 +2,57 @@ import speech_recognition as sr
 import webbrowser
 import pyttsx3
 import musiclibrary
-import requests
 
+# recoginze use to take speech recognizing functionality
+recognizer = sr.Recognizer() 
 
-recognizer = sr.Recognizer()
+# initialize the pyttsx
 engine = pyttsx3.init()
-newsapi = "83eec22bb078402d826b380e22637b3d"
-
 def speak(text):
     engine.say(text)
     engine.runAndWait()
 
-def process_command(c):
+def processcomand(c):
     if "open google" in c.lower():
-        webbrowser.open("http://google.com")
-    elif "open youtube" in c.lower():
-        webbrowser.open("http://youtube.com")
+        webbrowser.open("https://google.com")
     elif "open facebook" in c.lower():
-        webbrowser.open("http://facebook.com")
+        webbrowser.open("https://facebook.com")
+    elif "open youtube" in c.lower():
+        webbrowser.open("https://youtube.com")
+    elif "open lindin" in c.lower():
+        webbrowser.open("https://lindin.com")
+    elif "open instagram" in c.lower():
+        webbrowser.open("https://instagram.com")
     elif c.lower().startswith("play"):
         song = c.lower().split(" ")[1]
-        link =  musiclibrary.music[song]
+        link = musiclibrary.music[song]
         webbrowser.open(link)
-
-    elif "headline" in c.lower():
-        r = requests.get(f"https://newsapi.org/v2/top-headlines?country=us&apiKey={newsapi}")
-        if r.status_code == 200:
-            # Parse the JSON response
-            data = r.json()
-            
-            # Extract the articles
-            articles = data.get('articles', [])
-            
-            # Print the headlines
-            for article in articles:
-                speak(article['title'])
-
     else:
-        # openai handle request
-        pass
+        print("error")
 
 if __name__ == "__main__":
     speak("Initializing google....")
+
     while True:
-        # Listen for the wake word "Jarvis"
+        # Listen for the wake word "google"
         # obtain audio from the microphone
         r = sr.Recognizer()
          
         print("recognizing...")
+
         try:
             with sr.Microphone() as source:
                 print("Listening...")
                 audio = r.listen(source, timeout=2, phrase_time_limit=1)
             word = r.recognize_google(audio)
             if(word.lower() == "google"):
-                speak("Ya")
-                # Listen for command
+                speak("Yes")
                 with sr.Microphone() as source:
                     print("google Active...")
                     audio = r.listen(source)
                     command = r.recognize_google(audio)
 
-                    process_command(command)
+                    processcomand(command)
 
 
         except Exception as e:
