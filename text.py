@@ -8,7 +8,8 @@ import pygame
 import os
 from openai import OpenAI
 from dotenv import load_dotenv
-import os
+import tkinter as tk
+from tkinter import scrolledtext
 
 # recoginze use to take speech recognizing functionality
 recognizer = sr.Recognizer() 
@@ -22,16 +23,16 @@ load_dotenv()  # loads .env from the current working directory
 api_key = os.getenv("OPENAI_API_KEY")
 if not api_key:
     raise RuntimeError("OPENAI_API_KEY not found. Is your .env in the project root?")
+
 def aiprocess(command):
     client = OpenAI(api_key=api_key)
     resp = client.chat.completions.create(
-
-    model="gpt-5",  # you can change this later
-    messages=[
-        {"role": "system", "content": "You are a virtual assistant named Google skilled in general tasks like Alexa and Google Cloud. Give short responses please"},
-        {"role": "user", "content": command}
-    ]
-)
+        model="gpt-5",
+        messages=[
+            {"role": "system", "content": "You are a virtual assistant named Google skilled in general tasks like Alexa and Google Cloud. Give short responses please"},
+            {"role": "user", "content": command}
+        ]
+    )
     return resp.choices[0].message.content
 
 def speak_old(text):
@@ -42,22 +43,31 @@ def speak(text):
     tts = gTTS(text)
     tts.save('temp.mp3') 
 
-    # Initialize Pygame mixer
     pygame.mixer.init()
-
-    # Load the MP3 file
     pygame.mixer.music.load('temp.mp3')
-
-    # Play the MP3 file
     pygame.mixer.music.play()
 
-    # Keep the program running until the music stops playing
     while pygame.mixer.music.get_busy():
         pygame.time.Clock().tick(10)
     
     pygame.mixer.music.unload()
     os.remove("temp.mp3") 
 
+# ----------------- GUI for News -----------------
+def show_news_gui(articles):
+    root = tk.Tk()
+    root.title("News Headlines")
+    root.geometry("600x400")
+
+    text_area = scrolledtext.ScrolledText(root, wrap=tk.WORD, font=("Arial", 12))
+    text_area.pack(expand=True, fill='both')
+
+    for i, article in enumerate(articles[:10], start=1):  # show only first 10
+        title = article["title"]
+        text_area.insert(tk.END, f"{i}. {title}\n\n")
+
+    root.mainloop()
+# ------------------------------------------------
 
 def processcomand(c):
     if "open google" in c.lower():
@@ -67,7 +77,7 @@ def processcomand(c):
     elif "open youtube" in c.lower():
         webbrowser.open("https://youtube.com")
     elif "open lindin" in c.lower():
-        webbrowser.open("https://lindin.com")
+        webbrowser.open("https://linkedin.com")
     elif "open instagram" in c.lower():
         webbrowser.open("https://instagram.com")
     elif c.lower().startswith("play"):
@@ -79,12 +89,15 @@ def processcomand(c):
         if r.status_code == 200:
             data = r.json()
             articles = data.get("articles", [])
-            for article in articles:
+
+            # Print in console + speak
+            for article in articles[:5]:  # speak only first 5 to avoid long output
                 title = article["title"]
-                print(title)       # show in text
-                speak(title)       # speak out
-                
-                
+                print(title)
+                speak(title)
+
+            # Show GUI
+            show_news_gui(articles)
     else:
         output = aiprocess(c)
         speak(output)
@@ -93,10 +106,7 @@ if __name__ == "__main__":
     speak("Initializing google....")
 
     while True:
-        # Listen for the wake word "google"
-        # obtain audio from the microphone
         r = sr.Recognizer()
-         
         print("recognizing...")
 
         try:
@@ -110,9 +120,6 @@ if __name__ == "__main__":
                     print("google Active...")
                     audio = r.listen(source)
                     command = r.recognize_google(audio)
-
                     processcomand(command)
-
-
         except Exception as e:
             print("Error; {0}".format(e))
